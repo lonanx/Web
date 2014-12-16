@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=utf-8>
+    <link rel="shortcut icon" href="favicon.ico" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <!--[if lt IE 9]>
+    <script src="js/html5.js"></script>
+    <![endif]-->
+    <script src="js/jquery.min.js"></script>
+    <script src="js/jquery.filedrop.js"></script>
+    <script src="js/script.js"></script>
+    <script type="text/javascript" src="cocos2d-js-v3.1-lite.js" charset="UTF-8"></script>
+
+</head>
+<body>
+    <form id="form1" runat="server">
+    <div >
+    <div id="dropbox">
+            <canvas id="gameCanvas" width="800" height="620" ></canvas>
+            <!-- <span class="message">让我们开始吧。<br /><i>拖拽你的照片到这里。</i></span> -->
+        </div>
+        <div class="clear"></div> 
+        
+    </div>
+
+    <div id="demo">
+    <input type="button" onclick="addImage()" value="add image"> 
+</div>
+    </form>
+</body>
+
+<script type="text/javascript">
+
+    function addImage(url,width,height){
+        var size = cc.director.getWinSize();
+        var sprite = cc.Sprite.create(url);
+        var newX = 0;
+        var newY = 0;
+        var newScale = 0;
+
+        newScale = 300/width;
+
+   
+        if(pictures.length>0){
+            var lastPic = pictures[pictures.length-1];
+            var picHeight = lastPic.newHeight;
+            var picY = lastPic.getPositionY();
+            
+            newX = size.width / 2;
+            newY = picY - picHeight -20;
+
+        }else{
+            
+            newX = size.width / 2;
+            newY = size.height -20;
+        }
+        
+        
+        var picture = new Picture(url,newX,newY,300,height*300/width,newScale);
+        pictures.push(picture);
+        Stage.addChild(picture, 0);
+
+
+    }
+    var Stage = null;
+    var pictures = new Array();
+
+    // 创建一个事件监听器 OneByOne 为单点触摸
+    var piclistener = cc.EventListener.create({
+        event: cc.EventListener.TOUCH_ONE_BY_ONE,
+        swallowTouches: false,                       // 设置是否吞没事件，在 onTouchBegan 方法返回 true 时吞掉事件，不再向下传递。
+        onTouchBegan: function (touch, event) {     //实现 onTouchBegan 事件处理回调函数
+            var target = event.getCurrentTarget();  // 获取事件所绑定的 target, 通常是cc.Node及其子类 
+
+            // 获取当前触摸点相对于按钮所在的坐标
+            var locationInNode = target.convertToNodeSpace(touch.getLocation());    
+            var s = target.getContentSize();
+            var rect = cc.rect(0, 0, s.width, s.height);
+
+            if (cc.rectContainsPoint(rect, locationInNode)) {       // 判断触摸点是否在按钮范围内
+                cc.log("sprite began... x = " + locationInNode.x + ", y = " + locationInNode.y);
+                target.opacity = 180;
+                target.clickStartX = touch.getLocation().x;
+                target.clickStartY = touch.getLocation().y;
+                target.locationInNode = locationInNode;
+                return true;
+            }
+            return false;
+        },
+        onTouchMoved: function (touch, event) {         //实现onTouchMoved事件处理回调函数, 触摸移动时触发
+            // 移动当前按钮精灵的坐标位置
+            // var target = event.getCurrentTarget();
+            // var delta = touch.getDelta();              //获取事件数据: delta
+            // target.x += delta.x;
+            // target.y += delta.y;
+        },
+        onTouchEnded: function (touch, event) {         // 实现onTouchEnded事件处理回调函数
+            var target = event.getCurrentTarget();
+            cc.log("sprite onTouchesEnded.. ");
+            target.setOpacity(255);
+            // var locationInNode = target.convertToNodeSpace(ccp(target.clickStartX,target.clickStartY)); 
+            var clickEndX = touch.getLocation().x;
+            var clickEndY = touch.getLocation().y;
+
+            //如果x轴上的变化大于Y 则添加对话框
+            if(Math.abs(target.clickStartX-clickEndX)>Math.abs(target.clickStartY-clickEndY)){
+                debugger;
+                var sprite = cc.Sprite.create("img/dialog.png");
+                sprite.attr({
+                    anchorX: 0,
+                    anchorY: 1
+                });
+                target.addChild(sprite);
+                sprite.setPosition(target.locationInNode.x,target.locationInNode.y+30);
+            }
+
+
+
+            // if (target == sprite2) {                    
+            //     sprite1.setLocalZOrder(100);            // 重新设置 ZOrder，显示的前后顺序将会改变
+            // } else if (target == sprite1) {
+            //     sprite1.setLocalZOrder(0);
+            // }
+        }
+    });
+
+
+    var Picture = cc.Sprite.extend({
+        ctor:function(url,x,y,width,height,scale){
+            
+            this._super(url);
+            this.attr({
+                anchorX: 0.5,
+                anchorY: 1
+            });
+            this.setPosition(x,y);
+            this.setScale(scale);
+            this.newHeight = height;
+            this.newWidth = width;
+
+            var clickStartX,clickStartY,clickEndX,clickEndY;
+            
+            cc.eventManager.addListener(piclistener.clone(), this);
+
+          
+        },
+    });
+
+          window.onload = function(){
+              cc.game.onStart = function(){
+                  //load resources
+                  cc.LoaderScene.preload(["img/pic_init.png"], function () {
+                      var MyScene = cc.Scene.extend({
+                          onEnter:function () {
+                              this._super();
+                              var size = cc.director.getWinSize();
+                              var sprite = cc.Sprite.create("img/pic_init.png");
+                              sprite.attr({
+                                  x: size.width / 2,
+                                  y: size.height -20,
+                                  anchorX: 0.5,
+                                  anchorY: 1
+                              });
+
+                              //sprite.setPosition(size.width / 2, size.height -20 );
+                              //sprite.setScale(0.8);
+                              // this.addChild(sprite, 0);
+                              Stage = this;
+
+
+                              
+
+
+                              // var label = cc.LabelTTF.create("Hello World", "Arial", 40);
+                              // label.setPosition(size.width / 2, size.height / 2);
+                              // label.setColor(cc.color(180, 180, 180));
+                              // this.addChild(label, 1);
+
+                              cc.eventManager.addListener({
+                                
+                                event:cc.EventListener.TOUCH_ONE_BY_ONE,
+                                swallowTouches:true,
+                                onTouchBegan:function(t,e){
+                                     return true;
+                                },
+                                onTouchEnded:function(t,e){
+                                    // Stage.setPositionY(Stage.getPositionY() + 40);
+                                },
+                                onTouchMoved:function(touch, event){
+
+                                    
+                                    var delta = touch.getDelta();              //获取事件数据: delta
+
+
+                                    // debugger;
+                                    // target.x += delta.x;
+
+                                    newStageY = Stage.getPositionY() + delta.y;
+                                     // debugger;
+                                    if(newStageY < 0 ){
+                                        newStageY = 0;
+                                    }
+                                    if(pictures.length>0){
+                                        var lastPic = pictures[pictures.length-1];
+                                        var picHeight = lastPic.newHeight;
+                                        var picY = lastPic.getPositionY(); 
+
+                                        // lastBottomY = max(size.height,picY+picHeight+20);
+                                        //如果画布大于当前可视区域范围 则不能向下移动
+                                        if(picY-picHeight>0){
+                                            newStageY = 0;
+                                        }else{
+                                            //如果画布大于可视区域 则不能超过画布边界
+                                            if(newStageY>Math.abs(picY-picHeight)+20){
+
+                                                newStageY = Math.abs(picY-picHeight) + 20;
+                                            }
+
+                                        }
+
+
+                                        
+
+                                    }else{
+                                        //如果图片列表为空
+                                        if(newStageY<0){
+                                            newStageY = 0;
+                                        }
+                                    }
+
+
+                                    Stage.setPositionY(newStageY);
+                                    // target.y += delta.y;
+                                    // return true;
+                                    // cc.log("sprite began... y = " + target.y);
+                                }
+                                },this)
+
+                          }
+                      });
+                      cc.director.runScene(new MyScene());
+                  }, this);
+              };
+              cc.game.run("gameCanvas");
+          };
+    </script>
+</html>

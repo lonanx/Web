@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hello Cocos2d-JS</title> 
+    <script type="text/javascript" src="cocos2d-js-v3.1-lite.js" charset="UTF-8"></script>
+    <script src="jquery.min.js"></script>
+    <style type="text/css">
+    body{background-color: #111;}
+    
+    </style>
+</head>
+<body>   
+    <canvas id="gameCanvas" width="800" height="820" ></canvas>
+    <script type="text/javascript">
+          window.onload = function(){
+              cc.game.onStart = function(){
+                  //load resources
+                  cc.LoaderScene.preload(["img/pic_init.png"], function () {
+                      var MyScene = cc.Scene.extend({
+                          onEnter:function () {
+                              this._super();
+                              var size = cc.director.getWinSize();
+                              var sprite = cc.Sprite.create("img/pic_init.png");
+                              sprite.attr({
+                                  x: size.width / 2,
+                                  y: size.height -20,
+                                  anchorX: 0.5,
+                                  anchorY: 1
+                              });
+                              //sprite.setPosition(size.width / 2, size.height -20 );
+                              sprite.setScale(0.2);
+                              this.addChild(sprite, 0);
+
+
+                              
+
+
+                              // var label = cc.LabelTTF.create("Hello World", "Arial", 40);
+                              // label.setPosition(size.width / 2, size.height / 2);
+                              // label.setColor(cc.color(180, 180, 180));
+                              // this.addChild(label, 1);
+
+                          }
+                      });
+                      cc.director.runScene(new MyScene());
+                  }, this);
+              };
+              cc.game.run("gameCanvas");
+          };
+    </script>
+</body>
+</html>
