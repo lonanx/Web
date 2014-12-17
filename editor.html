@@ -105,14 +105,32 @@
 
             //如果x轴上的变化大于Y 则添加对话框
             if(Math.abs(target.clickStartX-clickEndX)>Math.abs(target.clickStartY-clickEndY)){
-                debugger;
-                var sprite = cc.Sprite.create("img/dialog.png");
-                sprite.attr({
-                    anchorX: 0,
-                    anchorY: 1
-                });
-                target.addChild(sprite);
-                sprite.setPosition(target.locationInNode.x,target.locationInNode.y+30);
+                // debugger;
+                // var sprite = cc.Sprite.create("img/dialog.png");
+                // sprite.attr({
+                //     anchorX: 0,
+                //     anchorY: 1
+                // });
+                // target.addChild(sprite);
+                // sprite.setPosition(target.locationInNode.x,target.locationInNode.y+30);
+
+                var tmp = cc.Sprite.create("img/dialog.png");  
+                var theSize = tmp.getContentSize();
+                var fullRect = cc.rect(0,0,theSize.width,theSize.height);
+                var insetRect = cc.rect(58,33,theSize.width-94,theSize.height-70);
+                var scale9sprite = cc.Scale9Sprite.create("img/dialog.png",fullRect,insetRect);
+                scale9sprite.setContentSize(theSize.width*3,theSize.height*2);
+                // scale9sprite.x  = size.width/2;
+                // scale9sprite.y = size.height/2;
+                scale9sprite.setPosition(target.locationInNode.x,target.locationInNode.y+30);
+                target.addChild(scale9sprite);
+
+
+                // var spriteDialog = cc.CCScale9Sprite.create("img/dialog.png");
+                // spriteDialog.setAnchorPoint(0,1);
+                // spriteDialog->setPreferredSize(CCSizeMake(255, 20));
+                // labBg1->setPosition(ccp(size.width/2, size.height/2));
+                // addChild(labBg1);
             }
 
 
