@@ -66,6 +66,38 @@
     var Stage = null;
     var pictures = new Array();
 
+    //创建TextArea 触摸事件
+    var TextArealistener = cc.EventListener.create({
+        event: cc.EventListener.TOUCH_ONE_BY_ONE,
+        swallowTouches: false,                       // 设置是否吞没事件，在 onTouchBegan 方法返回 true 时吞掉事件，不再向下传递。
+        onTouchBegan: function (touch, event) { 
+            var target = event.getCurrentTarget();  // 获取事件所绑定的 target, 通常是cc.Node及其子类 
+
+            // 获取当前触摸点相对于按钮所在的坐标
+            var locationInNode = target.convertToNodeSpace(touch.getLocation());    
+            var s = target.getContentSize();
+            var rect = cc.rect(0, 0, s.width, s.height);
+
+            if (cc.rectContainsPoint(rect, locationInNode)) {
+                    // debugger;
+                    target.attachWithIME();
+                    cc.log("Mouse Down");
+                    return true;
+
+            }
+                // var pos = event.getLocation(); //当前事件发生的光标位置
+                // var target = event.getCurrentTarget(); //事件绑定的目标
+                // //判断当前事件发生的位置是否在事件目标区域内
+                // if( cc.rectContainsPoint(target.getBoundingBox(), pos) ) {
+                //     debugger;
+                //     cc.log("Mouse Down");
+                //     return true;
+                // }
+                return false;
+        },
+        
+    });
+
     // 创建一个事件监听器 OneByOne 为单点触摸
     var piclistener = cc.EventListener.create({
         event: cc.EventListener.TOUCH_ONE_BY_ONE,
@@ -113,17 +145,19 @@
                 // });
                 // target.addChild(sprite);
                 // sprite.setPosition(target.locationInNode.x,target.locationInNode.y+30);
+                var dialog = new TextFieldTTFDefaultTest(target.locationInNode.x,target.locationInNode.y+30);
+                target.addChild(dialog);
 
-                var tmp = cc.Sprite.create("img/dialog.png");  
-                var theSize = tmp.getContentSize();
-                var fullRect = cc.rect(0,0,theSize.width,theSize.height);
-                var insetRect = cc.rect(58,33,theSize.width-94,theSize.height-70);
-                var scale9sprite = cc.Scale9Sprite.create("img/dialog.png",fullRect,insetRect);
-                scale9sprite.setContentSize(theSize.width*3,theSize.height*2);
-                // scale9sprite.x  = size.width/2;
-                // scale9sprite.y = size.height/2;
-                scale9sprite.setPosition(target.locationInNode.x,target.locationInNode.y+30);
-                target.addChild(scale9sprite);
+
+                
+debugger;
+                
+
+
+                // var textField = new TextFieldTTFDefaultTest();
+                // textField.parent = scale9sprite;
+                //scale9sprite.addChild(textField,1);
+                
 
 
                 // var spriteDialog = cc.CCScale9Sprite.create("img/dialog.png");
@@ -140,6 +174,249 @@
             // } else if (target == sprite1) {
             //     sprite1.setLocalZOrder(0);
             // }
+        }
+    });
+
+    var Green=cc.Layer.extend({
+    
+        init:function  () {
+            var layer1=cc.LayerColor.create(cc.c4(0,255,0,255),320,480);
+
+            this.addChild(layer1);
+            this.setKeyboardEnabled(true);
+            this.setTouchEnabled(true);
+
+            return true;
+        },
+
+        onKeyUp:function (key) {
+            window.alert(key);
+        },
+
+        onKeyDown:function (key) {
+            window.alert(key);
+        },
+
+        onTouchesEnded:function (touches,event) {
+            alert(touches[0].locationInView().x);
+        }
+    });
+
+    var textInputGetRect = function (node) {
+        var rc = cc.rect(node.x, node.y, node.width, node.height);
+        rc.x -= rc.width / 2;
+        rc.y -= rc.height / 2;
+        return rc;
+    };
+
+    //接受输入的层
+    var TextInputTest = cc.Layer.extend({
+        notificationLayer:null,
+        ctor:function() {
+            this._super();
+            this.init();
+        },
+
+        
+
+        title:function () {
+            return "text input test";
+        },
+
+        addKeyboardNotificationLayer:function (layer) {
+            this.notificationLayer = layer;
+            this.addChild(layer);
+        },
+
+        onEnter:function () {
+            this._super();
+
+            
+        }
+    });
+
+//////////////////////////////////////////////////////////////////////////
+// KeyboardNotificationLayer for test IME keyboard notification.
+//////////////////////////////////////////////////////////////////////////
+    var KeyboardNotificationLayer = TextInputTest.extend({
+        _trackNode:null,
+        _beginPos:null,
+
+        ctor:function () {
+            this._super();
+            debugger
+            if( 'touches' in cc.sys.capabilities ){
+                cc.eventManager.addListener({
+                    event: cc.EventListener.TOUCH_ALL_AT_ONCE,
+                    onTouchesEnded: this.onTouchesEnded
+                }, this);
+            } else if ('mouse' in cc.sys.capabilities )
+                cc.eventManager.addListener({
+                    event: cc.EventListener.MOUSE,
+                    onMouseUp: this.onMouseUp
+                }, this);
+        },
+
+        subtitle:function () {
+            return "";
+        },
+
+        onClickTrackNode:function (clicked) {
+        },
+
+        keyboardWillShow:function (info) {
+            cc.log("TextInputTest:keyboardWillShowAt(origin:" + info.end.x + "," + info.end.y
+                + ", size:" + info.end.width + "," + info.end.height + ")");
+
+            if (!this._trackNode)
+                return;
+
+            var rectTracked = textInputGetRect(this._trackNode);
+            cc.log("TextInputTest:trackingNodeAt(origin:" + info.end.x + "," + info.end.y
+                + ", size:" + info.end.width + "," + info.end.height + ")");
+
+            // if the keyboard area doesn't intersect with the tracking node area, nothing need to do.
+            if (!cc.rectIntersectsRect(rectTracked, info.end))
+                return;
+
+            // assume keyboard at the bottom of screen, calculate the vertical adjustment.
+            var adjustVert = cc.rectGetMaxY(info.end) - cc.rectGetMinY(rectTracked);
+            cc.log("TextInputTest:needAdjustVerticalPosition(" + adjustVert + ")");
+
+            // move all the children node of KeyboardNotificationLayer
+            var children = this.children;
+            for (var i = 0; i < children.length; ++i) {
+                var node = children[i];
+                node.y += adjustVert;
+            }
+        },
+
+        onTouchesEnded:function (touches, event) {
+            var target = event.getCurrentTarget();
+            if (!target._trackNode)
+                return;
+
+            // grab first touch
+            if(touches.length == 0)
+                return;
+
+            var touch = touches[0];
+            var point = touch.getLocation();
+
+            // decide the trackNode is clicked.
+            cc.log("KeyboardNotificationLayer:clickedAt(" + point.x + "," + point.y + ")");
+
+            var rect = textInputGetRect(target._trackNode);
+            cc.log("KeyboardNotificationLayer:TrackNode at(origin:" + rect.x + "," + rect.y
+                + ", size:" + rect.width + "," + rect.height + ")");
+
+            target.onClickTrackNode(cc.rectContainsPoint(rect, point));
+            cc.log("----------------------------------");
+        },
+
+        onMouseUp:function (event) {
+            debugger
+            var target = event.getCurrentTarget();
+            // if (!target._trackNode)
+            //     return;
+            
+            var point = event.getLocation();
+            point = target.convertToNodeSpaceAR(point);
+
+            // decide the trackNode is clicked.
+            cc.log("KeyboardNotificationLayer:clickedAt(" + point.x + "," + point.y + ")");
+
+            var rect = textInputGetRect(target._trackNode);
+            cc.log("KeyboardNotificationLayer:TrackNode at(origin:" + rect.x + "," + rect.y
+                + ", size:" + rect.width + "," + rect.height + ")");
+
+            target.onClickTrackNode(cc.rectContainsPoint(rect, point));
+            cc.log("----------------------------------");
+        }
+    });
+
+    var TextFieldTTFDefaultTest = KeyboardNotificationLayer.extend({
+        parent:null,
+        ctor:function (x,y) {
+            
+            this._super();
+            this.initPosition = {};
+            this.initPosition.x = x;
+            this.initPosition.y = y;
+            
+        },
+        subtitle:function () {
+            return "TextFieldTTF with default behavior test";
+        },
+
+        onClickTrackNode:function (clicked) {
+            debugger;
+            var textField = this._trackNode;
+            if (clicked) {
+                // TextFieldTTFTest be clicked
+                cc.log("TextFieldTTFDefaultTest:CCTextFieldTTF attachWithIME");
+                textField.attachWithIME();
+            } else {
+                // TextFieldTTFTest not be clicked
+                cc.log("TextFieldTTFDefaultTest:CCTextFieldTTF detachWithIME");
+                textField.detachWithIME();
+            }
+        },
+
+        onEnter:function () {
+            this._super();
+            this.setContentSize(200,100);
+            this.setAnchorPoint(0,0);
+            this.setPosition(this.initPosition.x,this.initPosition.y);
+
+            // add CCTextFieldTTF
+            var winSize = cc.director.getWinSize();
+
+            //文字输入框
+                //var label = self._label = new cc.TextFieldTTF("大家好其实我是一个对话框，你可以点击我输入你想说的内容", "Arial", 18,cc.size(200, 0));
+                var label = self._label = new cc.TextFieldTTF("大家好其实我是一个对话框，你可以点击我输入你想说的内容",cc.size(200, 0),cc.TEXT_ALIGNMENT_LEFT, "Arial", 18);
+                label.setColor(cc.color(50, 50, 50));
+                
+                var txtLineLength = (label._string.length * 18)/200 + 1;
+                var txtLineHeight = label._fontClientHeight;
+                var txtAreaHeight = txtLineHeight * txtLineLength;
+                
+
+                //对话框
+                var tmp = cc.Sprite.create("img/dialog.png");
+                var theSize = tmp.getContentSize();
+                
+                var fullRect = cc.rect(0,0,theSize.width,theSize.height);
+                var insetRect = cc.rect(58,33,theSize.width-94,theSize.height-66);
+                var scale9sprite = cc.Scale9Sprite.create("img/dialog.png",fullRect,insetRect);
+                scale9sprite.setContentSize(theSize.width*1.7,txtAreaHeight+30);
+                scale9sprite.attr({
+                    anchorX: 0,
+                    anchorY: 1
+                });
+                // scale9sprite.x  = size.width/2;
+                // scale9sprite.y = size.height/2;
+                scale9sprite.setPosition(0,0);
+                this.addChild(scale9sprite);
+                this.setContentSize(theSize.width*1.7,txtAreaHeight+30);
+
+
+
+                
+                //放入文本
+                label.setPosition(scale9sprite.width/2+10,scale9sprite.height/2);
+                // label._dimensions = cc.size(theSize.width-94, txtAreaHeight);
+                scale9sprite.addChild(label, 10);
+
+            // var textField = new cc.TextFieldTTF("<click here for input>",
+            //     "Arial",
+            //     16);
+            // debugger;
+            // //this.parent.addChild(textField);
+            // textField.x = this.parent.width / 2;
+            // textField.y = this.parent.height / 2;
+
+            this._trackNode = label;
         }
     });
 
@@ -165,10 +442,102 @@
         },
     });
 
+    var TextArea = cc.LabelTTF.extend({
+        
+        ctor:function(placeholder,fontName, fontSize,dimensions){
+            this._super(placeholder,fontName, fontSize,dimensions);
+            cc.eventManager.addListener(TextArealistener.clone(), this);
+            cc.imeDispatcher.addDelegate(this);
+            cc.LabelTTF.prototype.ctor.call(this);
+        },
+        attachWithIME:function () {
+            debugger;
+            return cc.imeDispatcher.attachDelegateWithIME(this);
+        },
+        detachWithIME:function () {
+                        debugger;
+
+            return cc.imeDispatcher.detachDelegateWithIME(this);
+        },
+        canAttachWithIME:function () {
+                        debugger;
+
+            return (this.delegate) ? (!this.delegate.onTextFieldAttachWithIME(this)) : true;
+        },
+        didAttachWithIME:function () {
+        },
+        canDetachWithIME:function () {
+            return (this.delegate) ? (!this.delegate.onTextFieldDetachWithIME(this)) : true;
+        },
+        didDetachWithIME:function () {
+        },
+        deleteBackward:function () {
+            var strLen = this._inputText.length;
+            if (strLen == 0)
+                return;
+            var deleteLen = 1;
+            if (this.delegate && this.delegate.onTextFieldDeleteBackward(this, this._inputText[strLen - deleteLen], deleteLen)) {
+                return;
+            }
+            if (strLen <= deleteLen) {
+                this._inputText = "";
+                this._charCount = 0;
+                cc.LabelTTF.prototype.setString.call(this,this._placeHolder);
+                this.setColor(this.colorSpaceHolder);
+                return;
+            }
+            this.string = this._inputText.substring(0, strLen - deleteLen);
+        },
+        removeDelegate:function () {
+            cc.imeDispatcher.removeDelegate(this);
+        },
+        insertText:function (text, len) {
+            debugger;
+            var sInsert = text;
+            var pos = sInsert.indexOf('\n');
+            if (pos > -1) {
+                sInsert = sInsert.substring(0, pos);
+            }
+            if (sInsert.length > 0) {
+                if (this.delegate && this.delegate.onTextFieldInsertText(this, sInsert, sInsert.length)) {
+                    return;
+                }
+                var sText = this._inputText + sInsert;
+                this._charCount = sText.length;
+                this.string = sText;
+            }
+            if (pos == -1)
+                return;
+            if (this.delegate && this.delegate.onTextFieldInsertText(this, "\n", 1))
+                return;
+            this.detachWithIME();
+        },
+        getContentText:function () {
+            return this._inputText;
+        },
+        keyboardWillShow:function (info) {
+            debugger;
+        },
+        keyboardDidShow:function (info) {
+                        debugger;
+
+        },
+        keyboardWillHide:function (info) {
+                        debugger;
+
+        },
+        keyboardDidHide:function (info) {
+                    debugger;
+},
+        onTextFieldInsertText:function (sender, text, len) {
+            debugger;
+        }
+    });
+
           window.onload = function(){
               cc.game.onStart = function(){
                   //load resources
-                  cc.LoaderScene.preload(["img/pic_init.png"], function () {
+                  cc.LoaderScene.preload(["img/pic_init.png","img/dialog.png"], function () {
                       var MyScene = cc.Scene.extend({
                           onEnter:function () {
                               this._super();
